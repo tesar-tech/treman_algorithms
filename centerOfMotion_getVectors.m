@@ -1,11 +1,8 @@
-%% Center of motion algoritm test
-%%
-%% load video, change size, convert to gray
-addpath('testsets/drep');
-% for oo = 2:6
-% videoName = ['MV' num2str(oo) '.mp4'];
-videoName = 'drep10x.mp4';
-v = VideoReader(videoName);
+function [vectors,fs] = centerOfMotion_getVectors(fileName)
+%centerOfMotion_getVectors Get x and y motion vector in video file
+%   fileName: video file
+%   vectors: size = [n x 2], where n is frame count - 1
+v = VideoReader(fileName);
 fs = v.FrameRate;
 %reduce size for faster computation 
 sizeReductionFactor = 0.1;%1 -> same resolution; 0.5 -> half resolution
@@ -17,15 +14,15 @@ ii = 1;%just for progress notification
 while hasFrame(v)
     %change size and convert to gray
     V3(:,:,ii) = mat2gray(rgb2gray( imresize(readFrame(v),[sizeX sizeY])));
-    ii = ii+1;
-    ii
+%     ii = ii+1;
+%     ii
 end
 
 V3Diff = diff(V3,1,3);%difference of consequent frames -> motion detection
 
-tic
+% tic
 x_centers = zeros(1,size(V3Diff,3));
-y_cemters = zeros(1,size(V3Diff,3));
+y_centers = zeros(1,size(V3Diff,3));
 
 V4_e = zeros([size(V3Diff,1),size(V3Diff,2),3,length(V3Diff)]);%for showing currnet centerOfMass
 centerOfMotionX = size(V3Diff,2) /2;%kdyby byl 1. diff 0 (stejny prvni a druhy frame)
@@ -48,7 +45,7 @@ for ii = 1:size(V3Diff,3)%for every frame
     end
     
     x_centers(ii) = centerOfMotionX;
-    y_cemters(ii) = centerOfMotionY;
+    y_centers(ii) = centerOfMotionY;
     
     
     if false %create video with point in com. (slows computation)
@@ -60,43 +57,7 @@ for ii = 1:size(V3Diff,3)%for every frame
     end
     
 end
-toc
+% toc
+vectors = [x_centers', y_centers'];
+end
 
-% implay(V4_e)
-
-
-xfft = fft(x_centers - mean(x_centers));%removes mean -> better results for fft
-p1 = abs(xfft(1:round(length(xfft)/2)));%important part of freq spect
-
-yfft = fft(y_cemters- mean(y_cemters));
-p2 = abs(yfft(1:round(length(yfft)/2)));
-
-pAvg = mean([p1;p2]);%avg of x and y freq spect
-
-x_tics = linspace(0,fs/2,length(p1));%x tics are same for both parts 
-
-[max_val_p1, max_ind_p1] = max(p1);%get max 
-[max_val_p2, max_ind_p2] = max(p2);
-[max_val_pMean, max_ind_pMean] = max(pAvg);
-
-%plots:
-fig = figure;
-subplot 321, plot(x_centers), title ('motion in x direction'),xlabel('frames')
-subplot 322, plot(y_cemters), title ('motion in y direction'),xlabel('frames')
-
-subplot 323, plot(x_tics,p1), title ('x freq');hold on;xlabel('freq [Hz]')
-stem(x_tics(max_ind_p1),max_val_p1,'r')
-legend('x freq',['max ' num2str(x_tics(max_ind_p1),"%.2f") ' Hz'])
-
-subplot 324, plot(x_tics,p2), title ('y freq');hold on;xlabel('freq [Hz]')
-stem(x_tics(max_ind_p2),max_val_p2,'r')
-legend('y freq',['max ' num2str(x_tics(max_ind_p2),"%.2f") ' Hz'])
-
-subplot 313, plot(x_tics,pAvg), title ('avg freq');hold on;xlabel('freq [Hz]')
-stem(x_tics(max_ind_pMean),max_val_pMean,'r')
-legend('avg freq',['max ' num2str(x_tics(max_ind_pMean),"%.2f") ' Hz'])
-
-sgtitle( videoName )
-
-% saveas(fig,['media/img_result_centerofmotion_' videoName '.png'])
-% end
