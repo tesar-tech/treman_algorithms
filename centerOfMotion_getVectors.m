@@ -5,16 +5,16 @@ function [vectors,fs] = centerOfMotion_getVectors(fileName)
 v = VideoReader(fileName);
 fs = v.FrameRate;
 %reduce size for faster computation 
-sizeReductionFactor = 0.1;%1 -> same resolution; 0.5 -> half resolution
+sizeReductionFactor = .1;%1 -> same resolution; 0.5 -> half resolution
 sizeX = round(v.Height*sizeReductionFactor);
 sizeY= round(v.Width*sizeReductionFactor);
 %variable for video in gray
 V3 = zeros([sizeX sizeY   round(v.FrameRate * v.Duration)]);
-ii = 1;%just for progress notification
+ii = 1;%frame iteration
 while hasFrame(v)
     %change size and convert to gray
     V3(:,:,ii) = mat2gray(rgb2gray( imresize(readFrame(v),[sizeX sizeY])));
-%     ii = ii+1;
+     ii = ii+1;
 %     ii
 end
 
